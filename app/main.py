@@ -1,3 +1,6 @@
+from config import Config
+from database import insert_pdf_metadata
+from ocr_processing import process_image_with_tesseract
 from fastapi import FastAPI, UploadFile, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
