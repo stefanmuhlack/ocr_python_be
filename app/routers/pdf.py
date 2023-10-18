@@ -13,3 +13,4 @@ async def upload_pdf(file: UploadFile = UploadFile(...)):
         return {"message": f"Processed {len(images)} pages from the PDF."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
