@@ -1,10 +1,9 @@
 from app.models.template import OCRRequest
-from fastapi import APIRouter
-
-router = APIRouter()
-
+from fastapi import APIRouter, HTTPException
 import json
 import os
+
+router = APIRouter()
 
 TEMPLATES_DIR = "templates"
 
@@ -26,9 +25,14 @@ async def process_ocr(request: OCRRequest):
         "classifier": classifier,
         "value_length": value_length
     }
+
+    # Ensure the templates directory exists
+    if not os.path.exists(TEMPLATES_DIR):
+        os.makedirs(TEMPLATES_DIR)
+
     try:
         with open(os.path.join(TEMPLATES_DIR, f"{template_name}.json"), "w") as f:
             json.dump(template_data, f)
         return {"message": f"Template {template_name} saved successfully!"}
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"Error saving template: {str(e)}")
