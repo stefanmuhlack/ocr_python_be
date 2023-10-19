@@ -1,13 +1,19 @@
+# Standard library imports
+import logging
+import json
+import os
+from datetime import datetime
+
+# Third-party library imports
+from fastapi import FastAPI, UploadFile, HTTPException, Depends
+from pydantic import BaseModel
+from pdf2image import convert_from_bytes
+
+# Application-specific imports
 from app.config import Config
 from app.database import insert_pdf_metadata
 from app.ocr_processing import process_image_with_tesseract
-from fastapi import FastAPI, UploadFile, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict
-from pdf2image import convert_from_bytes
 from app.routers import pdf, template
-import logging
-import json
 
 app = FastAPI()
 
@@ -15,40 +21,77 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class OCRRequest(BaseModel):
     template_name: str
     rectangles: List[Dict]
+
 
 # Include routers
 app.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
 app.include_router(template.router, prefix="/template", tags=["template"])
 
+TEMPLATES_DIR = "templates"
+IMAGES_DIR = "generated_images"
+
+
+def extract_data_from_ocr(ocr_text, rectangles):
+    extracted_data = {}
+    for rectangle in rectangles:
+        x, y, width, height = rectangle["x"], rectangle["y"], rectangle["width"], rectangle["height"]
+        description = rectangle["description"]
+
+        section = ocr_text[y:y + height, x:x + width]
+        extracted_data[description] = section.strip()
+
+    return extracted_data
+
+
 @app.post("/upload-pdf/")
-async def upload_pdf(file: UploadFile = UploadFile(...)):
+async def upload_pdf(file: UploadFile = UploadFile(...), upload_date: datetime = Depends(datetime.now)):
     logger.info("Received PDF upload request")
-    if file.filename.endswith(".pdf"):
-        contents = await file.read()
-        try:
-            images = convert_from_bytes(contents)
-            return {"message": f"Processed {len(images)} pages from the PDF."}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-    else:
+
+    if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
+
+    contents = await file.read()
+
+    # Ensure the templates directory exists
+    if not os.path.exists(TEMPLATES_DIR):
+        os.makedirs(TEMPLATES_DIR)
+
+    # Convert PDF to images and save them
+    images = convert_from_bytes(contents)
+    image_paths = []
+    for idx, image in enumerate(images):
+        image_path = os.path.join(IMAGES_DIR, f"{file.filename}_page_{idx + 1}.png")
+        image.save(image_path, "PNG")
+        image_paths.append(image_path)
+
+    # Store metadata in the database
+    insert_pdf_metadata(file.filename, upload_date)
+
+    return {"message": f"Processed {len(images)} pages from the PDF."}
+
 
 @app.post("/save-template/")
 async def save_template(template_name: str, template_data: dict):
+    # Ensure the templates directory exists
+    if not os.path.exists(TEMPLATES_DIR):
+        os.makedirs(TEMPLATES_DIR)
+
     try:
-        with open(f"templates/{template_name}.json", "w") as f:
+        with open(os.path.join(TEMPLATES_DIR, f"{template_name}.json"), "w") as f:
             json.dump(template_data, f)
         return {"message": "Template saved successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/get-template/")
 async def get_template(template_name: str):
     try:
-        with open(f"templates/{template_name}.json", "r") as f:
+        with open(os.path.join(TEMPLATES_DIR, f"{template_name}.json"), "r") as f:
             data = json.load(f)
         return data
     except FileNotFoundError:
@@ -56,9 +99,22 @@ async def get_template(template_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/process_ocr/")
 async def process_ocr(request: OCRRequest):
     template_name = request.template_name
     rectangles = request.rectangles
-    # Process the data, for example, save it to a file
-    return {"message": "Data processed successfully!"}
+
+    # Process images using OCR
+    ocr_results = []
+    for image_path in image_paths:
+        ocr_text = process_image_with_tesseract(image_path)
+        ocr_results.append(ocr_text)
+
+    # Extract data based on OCR results and template data
+    all_extracted_data = []
+    for ocr_text in ocr_results:
+        extracted_data = extract_data_from_ocr(ocr_text, rectangles)
+        all_extracted_data.append(extracted_data)
+
+    return {"message": "Data processed successfully!", "extracted_data": all_extracted_data}
