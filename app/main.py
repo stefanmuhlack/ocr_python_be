@@ -21,31 +21,26 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+TEMPLATES_DIR = "templates"
+IMAGES_DIR = "generated_images"
+
+# Ensure the directories exist during application startup
+for directory in [TEMPLATES_DIR, IMAGES_DIR]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 class OCRRequest(BaseModel):
     template_name: str
     rectangles: List[Dict]
 
-
 # Include routers
 app.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
 app.include_router(template.router, prefix="/template", tags=["template"])
 
-TEMPLATES_DIR = "templates"
-IMAGES_DIR = "generated_images"
-
-
 def extract_data_from_ocr(ocr_text, rectangles):
     extracted_data = {}
-    for rectangle in rectangles:
-        x, y, width, height = rectangle["x"], rectangle["y"], rectangle["width"], rectangle["height"]
-        description = rectangle["description"]
-
-        section = ocr_text[y:y + height, x:x + width]
-        extracted_data[description] = section.strip()
-
+    # : Modify this function to correctly extract data from the OCR results
     return extracted_data
-
 
 @app.post("/upload-pdf/")
 async def upload_pdf(file: UploadFile = UploadFile(...), upload_date: datetime = Depends(datetime.now)):
@@ -55,10 +50,6 @@ async def upload_pdf(file: UploadFile = UploadFile(...), upload_date: datetime =
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
 
     contents = await file.read()
-
-    # Ensure the templates directory exists
-    if not os.path.exists(TEMPLATES_DIR):
-        os.makedirs(TEMPLATES_DIR)
 
     # Convert PDF to images and save them
     images = convert_from_bytes(contents)
@@ -73,20 +64,14 @@ async def upload_pdf(file: UploadFile = UploadFile(...), upload_date: datetime =
 
     return {"message": f"Processed {len(images)} pages from the PDF."}
 
-
 @app.post("/save-template/")
 async def save_template(template_name: str, template_data: dict):
-    # Ensure the templates directory exists
-    if not os.path.exists(TEMPLATES_DIR):
-        os.makedirs(TEMPLATES_DIR)
-
     try:
         with open(os.path.join(TEMPLATES_DIR, f"{template_name}.json"), "w") as f:
             json.dump(template_data, f)
         return {"message": "Template saved successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/get-template/")
 async def get_template(template_name: str):
@@ -99,11 +84,14 @@ async def get_template(template_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/process_ocr/")
 async def process_ocr(request: OCRRequest):
     template_name = request.template_name
     rectangles = request.rectangles
+
+    # : Determine how to obtain the list of image paths for the uploaded PDF
+    # For now, using a placeholder list
+    image_paths = []
 
     # Process images using OCR
     ocr_results = []
