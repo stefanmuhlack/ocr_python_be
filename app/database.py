@@ -1,14 +1,16 @@
 import sqlite3
+import logging
+from app.config import Config
 
-DB_PATH = 'ocr_backend.db'
+logger = logging.getLogger(__name__)
 
 def insert_pdf_metadata(filename, upload_date):
     try:
-        with sqlite3.connect(DB_PATH) as conn:
+        with sqlite3.connect(Config.DB_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute('INSERT INTO PDFs (filename, upload_date) VALUES (?, ?)', (filename, upload_date))
             conn.commit()
     except sqlite3.Error as e:
-        print(f"Database error: {e}")
+        logger.error(f"Database error: {e}")
     except Exception as e:
-        print(f"Exception in `insert_pdf_metadata`: {e}")
+        logger.error(f"Exception in `insert_pdf_metadata`: {e}")

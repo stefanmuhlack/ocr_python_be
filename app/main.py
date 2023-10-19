@@ -1,19 +1,19 @@
-from config import Config
-from database import insert_pdf_metadata
-from ocr_processing import process_image_with_tesseract
+from app.config import Config
+from app.database import insert_pdf_metadata
+from app.ocr_processing import process_image_with_tesseract
 from fastapi import FastAPI, UploadFile, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 from pdf2image import convert_from_bytes
-from app.routers import pdf, template  # Ensure this import is correct
+from app.routers import pdf, template
 import logging
-
+import json
 
 app = FastAPI()
 
-class Config:
-    HD_SCREEN_SIZE = (1920, 1080)
-    POPPLER_PATH = r"C:\Program Files\Poppler R23.08.0-0\poppler-23.08.0\Library\bin"  # This should be made configurable
+# Logging Configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class OCRRequest(BaseModel):
     template_name: str
@@ -23,26 +23,18 @@ class OCRRequest(BaseModel):
 app.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
 app.include_router(template.router, prefix="/template", tags=["template"])
 
-# Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 @app.post("/upload-pdf/")
 async def upload_pdf(file: UploadFile = UploadFile(...)):
-    print("Received PDF upload request")
+    logger.info("Received PDF upload request")
     if file.filename.endswith(".pdf"):
         contents = await file.read()
         try:
             images = convert_from_bytes(contents)
-            # You can save these images or process them further
-            # For now, let's just return the number of pages processed
             return {"message": f"Processed {len(images)} pages from the PDF."}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     else:
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
-
-
 
 @app.post("/save-template/")
 async def save_template(template_name: str, template_data: dict):
@@ -64,18 +56,9 @@ async def get_template(template_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-app.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
-app.include_router(template.router, prefix="/template", tags=["template"])
-
-
-@app.post("/process_ocr/")  # This is the URL path for the new route
+@app.post("/process_ocr/")
 async def process_ocr(request: OCRRequest):
     template_name = request.template_name
     rectangles = request.rectangles
-
     # Process the data, for example, save it to a file
-    # You can use the rectangles and template_name here
-
     return {"message": "Data processed successfully!"}
-
-
