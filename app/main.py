@@ -1,15 +1,10 @@
-# Standard library imports
 import logging
 import json
 import os
 from datetime import datetime
-
-# Third-party library imports
 from fastapi import FastAPI, UploadFile, HTTPException, Depends
 from pydantic import BaseModel
 from pdf2image import convert_from_bytes
-
-# Application-specific imports
 from app.config import Config
 from app.database import insert_pdf_metadata
 from app.ocr_processing import process_image_with_tesseract
@@ -39,7 +34,12 @@ app.include_router(template.router, prefix="/template", tags=["template"])
 
 def extract_data_from_ocr(ocr_text, rectangles):
     extracted_data = {}
-    # : Modify this function to correctly extract data from the OCR results
+    for rect in rectangles:
+        # Assuming rectangles are defined by top-left and bottom-right coordinates
+        top_left, bottom_right = rect['top_left'], rect['bottom_right']
+        # Extract the text within this rectangle from the OCR results
+        # This is a simplified extraction and may need further refinement
+        extracted_data[rect['name']] = ocr_text[top_left[1]:bottom_right[1]][top_left[0]:bottom_right[0]]
     return extracted_data
 
 @app.post("/upload-pdf/")
@@ -62,7 +62,7 @@ async def upload_pdf(file: UploadFile = UploadFile(...), upload_date: datetime =
     # Store metadata in the database
     insert_pdf_metadata(file.filename, upload_date)
 
-    return {"message": f"Processed {len(images)} pages from the PDF."}
+    return {"message": f"Processed {len(images)} pages from the PDF.", "image_paths": image_paths}
 
 @app.post("/save-template/")
 async def save_template(template_name: str, template_data: dict):
@@ -89,9 +89,10 @@ async def process_ocr(request: OCRRequest):
     template_name = request.template_name
     rectangles = request.rectangles
 
-    # : Determine how to obtain the list of image paths for the uploaded PDF
-    # For now, using a placeholder list
-    image_paths = []
+    # Retrieve the list of image paths for the uploaded PDF
+    # For this example, we'll assume the images are named in a specific format
+    # This can be refined based on your actual storage and naming convention
+    image_paths = [os.path.join(IMAGES_DIR, f"{template_name}_page_{i + 1}.png") for i in range(len(rectangles))]
 
     # Process images using OCR
     ocr_results = []
