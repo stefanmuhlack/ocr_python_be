@@ -38,9 +38,13 @@ async def get():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    for i in range(100):
-        await websocket.send_text(f'Message {i}')
-        await asyncio.sleep(1)
-    await websocket.close()
+    try:
+        await websocket.accept()
+        for i in range(100):
+            await websocket.send_text(f'Message {i}')
+            await asyncio.sleep(1)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
 
