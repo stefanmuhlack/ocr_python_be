@@ -46,7 +46,14 @@ async def get():
 async def websocket_endpoint(websocket: WebSocket):
     try:
         await websocket.accept()
-for i in range(100):
+        for i in range(100):
+            await websocket.send_text(f'Message {i}')
+            await asyncio.sleep(1)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
+
             await websocket.send_text(f'Message {i}')
             await asyncio.sleep(1)
     except Exception as e:
