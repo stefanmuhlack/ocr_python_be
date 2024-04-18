@@ -60,8 +60,6 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
     finally:
         await websocket.close()
-
-@app.get("/")
 async def get():
     return HTMLResponse(html)
 
