@@ -54,7 +54,7 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         await websocket.close()
 
-            await websocket.send_text(f'Message {i}')
+        await websocket.send_text(f'Message {i}')
             await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
