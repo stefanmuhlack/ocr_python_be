@@ -1,38 +1,41 @@
-from app.models.template import OCRRequest
-from fastapi import APIRouter, HTTPException
-import json
-import os
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from ..database import get_session
+from ..models.template import Template
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-TEMPLATES_DIR = "templates"
-
-@router.post("/process_ocr/")
-async def process_ocr(request: OCRRequest):
-    template_name = request.template_name
-    page = request.page
-    rectangles = request.rectangles
-    description = request.description
-    classifier = request.classifier
-    value_length = request.value_length
-
-    # Save the template data to a JSON file
-    template_data = {
-        "template_name": template_name,
-        "page": page,
-        "rectangles": rectangles,
-        "description": description,
-        "classifier": classifier,
-        "value_length": value_length
-    }
-
-    # Ensure the templates directory exists
-    if not os.path.exists(TEMPLATES_DIR):
-        os.makedirs(TEMPLATES_DIR)
-
+@router.post("/templates")
+async def create_template(template_data: Template, db: Session = Depends(get_session)):
     try:
-        with open(os.path.join(TEMPLATES_DIR, f"{template_name}.json"), "w") as f:
-            json.dump(template_data, f)
-        return {"message": f"Template {template_name} saved successfully!"}
+        new_template = Template(**template_data.dict())
+        db.add(new_template)
+        db.commit()
+        return {'message': 'Template created successfully', 'template_id': new_template.id}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving template: {str(e)}")
+        db.rollback()
+        logger.error(f"Failed to create template: {e}")
+        raise HTTPException(status_code=500, detail="Unable to create template")
+
+@router.get("/templates/{template_id}")
+async def get_template(template_id: int, db: Session = Depends(get_session)):
+    template = db.query(Template).filter(Template.id == template_id).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template
+
+@router.delete("/templates/{template_id}")
+async def delete_template(template_id: int, db: Session = Depends(get_session)):
+    try:
+        template = db.query(Template).filter(Template.id == template_id).first()
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
+        db.delete(template)
+        db.commit()
+        return {'message': 'Template deleted successfully'}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to delete template: {e}")
+        raise HTTPException(status_code=500, detail="Unable to delete template")
