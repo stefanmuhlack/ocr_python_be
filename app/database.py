@@ -1,52 +1,43 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
-from datetime import datetime
-from app.config import Config
+from sqlalchemy.orm import sessionmaker, relationship
+import os
+
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./test.db')
+engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-class PDFMetadata(Base):
-    __tablename__ = 'PDFs'
+class User(Base):
+    __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    filename = Column(String)
-    upload_date = Column(DateTime, default=datetime.utcnow)
+    name = Column(String)
+    templates = relationship('Template', back_populates='owner')
 
-# Setup the database connection and scoped session
-engine = create_engine(f'sqlite:///{Config.DB_PATH}', connect_args={"check_same_thread": False})
-Session = scoped_session(sessionmaker(bind=engine))
+class Template(Base):
+    __tablename__ = 'templates'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    owner_id = Column(Integer, ForeignKey('users.id'))
+    owner = relationship('User', back_populates='templates')
 
-def insert_pdf_metadata(filename, upload_date):
-    session = Session()
-    new_pdf = PDFMetadata(filename=filename, upload_date=upload_date)
-    session.add(new_pdf)
-    session.commit()
-    session.close()
-
-def retrieve_pdf_metadata(filename):
-    session = Session()
-    pdf_metadata = session.query(PDFMetadata).filter(PDFMetadata.filename == filename).first()
-    session.close()
-    return pdf_metadata
-
-def update_pdf_metadata(filename, new_upload_date):
-    session = Session()
-    pdf_metadata = session.query(PDFMetadata).filter(PDFMetadata.filename == filename).first()
-    if pdf_metadata:
-        pdf_metadata.upload_date = new_upload_date
-        session.commit()
-    session.close()
-
-def delete_pdf_metadata(filename):
-    session = Session()
-    pdf_metadata = session.query(PDFMetadata).filter(PDFMetadata.filename == filename).first()
-    if pdf_metadata:
-        session.delete(pdf_metadata)
-        session.commit()
-    session.close()
-
-# Create all tables in the database which are defined by Base's subclasses such as PDFMetadata
+# Setup database session management
 Base.metadata.create_all(engine)
 
+def get_session():
+    try:
+        db_session = SessionLocal()
+        return db_session
+    except Exception as e:
+        print(f'Error creating database session: {e}')
+        return None
+
+# Example usage
+with get_session() as session:
+    user = User(name='John Doe')
+    session.add(user)
+    session.commit()
+    print('User added successfully!')
 Base.metadata.create_all(engine)
         logger.error(f"Database error: {e}")
