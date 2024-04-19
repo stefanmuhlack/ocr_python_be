@@ -13,6 +13,13 @@ class Config:
     # Directory to store template files
     TEMPLATES_DIR = os.getenv('TEMPLATES_DIR', 'templates')
 
+    # Ensure all configurations are set properly
+    @staticmethod
+    def verify_config():
+        missing = [var for var in ["ENVIRONMENT", "POPPLER_PATH", "DB_PATH", "TEMPLATES_DIR"] if not getattr(Config, var)]
+        if missing:
+            raise Exception(f"Missing environment variables: {', '.join(missing)}")
+
     # Add more configurations dynamically based on the environment
     if ENVIRONMENT == 'production':
         DB_PATH = os.getenv('PROD_DB_PATH', 'prod_ocr_backend.db')
