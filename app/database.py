@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import os
+from alembic import context
 
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./test.db')
 engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False})
@@ -22,8 +23,28 @@ class Template(Base):
     owner_id = Column(Integer, ForeignKey('users.id'))
     owner = relationship('User', back_populates='templates')
 
-# Setup database session management
-Base.metadata.create_all(engine)
+# Alembic Configuration to handle migrations
+alembic_cfg = context.config
+
+def run_migrations_offline():
+    url = alembic_cfg.get_main_option("sqlalchemy.url")
+    context.configure(url=url, target_metadata=Base.metadata, literal_binds=True)
+    with context.begin_transaction():
+        context.run_migrations()
+
+def run_migrations_online():
+    connectable = engine.connect()
+    context.configure(connection=connectable, target_metadata=Base.metadata)
+    try:
+        with context.begin_transaction():
+            context.run_migrations()
+    finally:
+        connectable.close()
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
 
 def get_session():
     try:
@@ -32,12 +53,3 @@ def get_session():
     except Exception as e:
         print(f'Error creating database session: {e}')
         return None
-
-# Example usage
-with get_session() as session:
-    user = User(name='John Doe')
-    session.add(user)
-    session.commit()
-    print('User added successfully!')
-Base.metadata.create_all(engine)
-        logger.error(f"Database error: {e}")
