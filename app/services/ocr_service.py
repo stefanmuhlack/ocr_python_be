@@ -1,10 +1,15 @@
 import logging
 from PIL import Image
 from pytesseract import image_to_string
+from abc import ABC, abstractmethod
 
-class OCRService:
-    @staticmethod
-    def process_image(image_path):
+class OCRServiceInterface(ABC):
+    @abstractmethod
+    def process_image(self, image_path):
+        pass
+
+class TesseractOCRService(OCRServiceInterface):
+    def process_image(self, image_path):
         # Load the image from the path
         img = Image.open(image_path)
         # Convert the image to grayscale for better OCR accuracy
