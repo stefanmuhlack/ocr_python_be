@@ -1,60 +1,55 @@
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, Security
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from typing import List, Dict
 import logging
 from logging.handlers import RotatingFileHandler
 import asyncio
-from typing import List, Dict
+import layoutparser as lp
 
 app = FastAPI()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+
 @app.post("/upload-pdf/")
 async def upload_pdf():
-    return {"message": "Processed"}
+    # Placeholder for actual file upload handling
+    return JSONResponse(status_code=200, content={"message": "PDF uploaded"})
 
 @app.post("/save-template/")
 async def save_template():
-    return {"message": "Template saved successfully."}
+    # Placeholder for actual template saving logic
+    return JSONResponse(status_code=200, content={"message": "Template saved successfully."})
 
 @app.get("/get-template/")
 async def get_template(template_name: str):
-    # Placeholder for actual template retrieval logic
-    return {"template_name": template_name, "x": 1, "y": 2, "z": 3}
+    # Simulate retrieving a template
+    return JSONResponse(status_code=200, content={"template_name": template_name, "details": "Template details here."})
 
 @app.post("/process-ocr/")
 async def process_ocr(template_name: str, rectangles: List[Dict[str, int]]):
-    # Simulate processing based on 'template_name' and 'rectangles'
-    # This is a placeholder. Replace with actual processing logic as needed.
-    return {"message": "OCR processed successfully!"}
+    # Simulate OCR processing using LayoutParser
+    model = lp.Detectron2LayoutModel(
+        'lp://PubLayNet',
+        extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.8],
+        label_map={0: "Text"}
+    )
+    results = model.detect(image_path)
+    return JSONResponse(status_code=200, content={"message": "OCR processed successfully!", "results": results})
 
-# Ensure these endpoints exist
 @app.post("/token")
 async def authenticate_user(form_data: OAuth2PasswordRequestForm = Depends()):
     # Implement actual authentication logic here
-    return {"access_token": "some_token", "token_type": "bearer"}
+    return JSONResponse(status_code=200, content={"access_token": "some_token", "token_type": "bearer"})
 
 @app.get("/secure-endpoint")
-async def secure_endpoint(token: str = Security(OAuth2PasswordBearer(tokenUrl="/token"))):
-    # Implementation goes here, token should be checked for validity
-    return {"message": "Secure content"}
+async def secure_endpoint(token: str = Depends(oauth2_scheme)):
+    # Ensure token validation logic is correctly implemented
+    return JSONResponse(status_code=200, content={"message": "Secure content"})
 
 # Setup advanced logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[RotatingFileHandler("app_logs.log", maxBytes=1000000, backupCount=3)])
 logger = logging.getLogger(__name__)
-
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>OCR Processing Status</title>
-    </head>
-    <body>
-        <h1>WebSocket Test</h1>
-        <button onclick='connectWebSocket()'>Connect</button>
-        <script>
-            function connectWebSocket() {
-                var ws = new WebSocket('ws://localhost:8000/ws');
-                ws.onmessage = function(event) {
                     var message = event.data;
                     document.body.append(message + '<br>');
                 };
