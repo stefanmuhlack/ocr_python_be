@@ -63,6 +63,15 @@ async def secure_endpoint(token: str = Depends(oauth2_scheme)):
 # Setup advanced logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[RotatingFileHandler("app_logs.log", maxBytes=1000000, backupCount=3)])
 logger = logging.getLogger(__name__)
+
+@app.get("/secure-endpoint")
+async def secure_endpoint(token: str = Depends(oauth2_scheme)):
+    # Ensure token validation logic is correctly implemented
+    return JSONResponse(status_code=200, content={"message": "Secure content"})
+
+# Setup advanced logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[RotatingFileHandler("app_logs.log", maxBytes=1000000, backupCount=3)])
+logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
                 };
                 ws.onclose = function(event) {
