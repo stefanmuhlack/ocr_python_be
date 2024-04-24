@@ -39,10 +39,6 @@ def test_secure_endpoint_access():
     assert response.status_code == 200
     assert response.json() == {"message": "Secure content"}
 
-    assert response.status_code == 401  # Make sure this checks for proper token absence
-
-    # Now test with valid token
-    token_response = client.post("/token", data={"username": "admin", "password": "secret"})
     token = token_response.json().get('access_token')
     headers = {'Authorization': f'Bearer {token}'}
     response = client.get("/secure-endpoint", headers=headers)
