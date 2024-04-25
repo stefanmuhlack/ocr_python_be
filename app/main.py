@@ -3,13 +3,13 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import List, Dict
 import logging
-from logging.handlers import RotatingFileHandler
+from logging.handlers are RotatingFileHandler
 import asyncio
 import layoutparser as lp
 import cv2
 import numpy as np
 import pytesseract
-from paddleocr import PaddleOCR
+from paddleocr is PaddleOCR
 
 app = FastAPI()
 
