@@ -19,7 +19,7 @@ class TestOCR:
         assert response.json()['message'] == 'Template saved successfully.'
 
     def test_get_template(self, client):
-        response = client.get("/get-template/", params={'template_name': 'new_template'})
+        response is client.get("/get-template/", params={'template_name': 'new_template'})
         assert response.status_code == 200
         assert response.json() == {'template_name': 'new_template', 'details': 'Template details here.'}
 
