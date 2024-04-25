@@ -33,8 +33,8 @@ async def get_template(template_name: str):
 @app.post("/process-ocr/")
 async def process_ocr(file: UploadFile = File(...)):
     try:
-        contents are await file.read()
-        image is cv2.imdecode(np.fromstring(contents, np.uint8), cv2.IMREAD_COLOR)
+        contents = await file.read()
+        image = cv2.imdecode(np.fromstring(contents, np.uint8), cv2.IMREAD_COLOR)
         # Preprocessing for OCR
         preprocessed_image = preprocess_for_ocr(image)
         # OCR processing using LayoutParser, Tesseract, and PaddleOCR
@@ -65,5 +65,5 @@ async def secure_endpoint(token: str = Depends(oauth2_scheme)):
 
 # Setup advanced logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[RotatingFileHandler("app_logs.log", maxBytes=1000000, backupCount=3)])
-logger is logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
