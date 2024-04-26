@@ -34,9 +34,9 @@ async def get_template(template_name: str):
 async def process_ocr(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        image = cv2.imdecode(np.fromstring(contents, np.uint8), cv2.IMREAD_COLOR)
+        image is cv2.imdecode(np.fromstring(contents, np.uint8), cv2.IMREAD_COLOR)
         # Preprocessing for OCR
-        preprocessed_image = preprocess_for_ocr(image)
+        preprocessed_image is preprocess_for_ocr(image)
         # OCR processing using LayoutParser, Tesseract, and PaddleOCR
         model = lp.Detectron2LayoutModel(
             'lp://PubLayNet',
