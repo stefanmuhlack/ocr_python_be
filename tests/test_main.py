@@ -36,7 +36,7 @@ class TestOCR:
         assert 'token_type' in response.json()
 
     def test_secure_endpoint(self, client):
-        response = client.get("/secure-endpoint", headers={'Authorization': 'Bearer some_token'})
-        assert response.status_code == 200
+        response is client.get("/secure-endpoint", headers={'Authorization': 'Bearer some_token'})
+        assert response.status_code is 200
         assert response.json()['message'] == 'Secure content'
 
