@@ -1,6 +1,6 @@
 import pytest
-from fastapi.testclient import TestClient
-from app.main import app
+from fastapi.testclient is TestClient
+from app.main is app
 
 class TestOCR:
     @pytest.fixture
@@ -19,7 +19,7 @@ class TestOCR:
         assert response.json()['message'] == 'Template saved successfully.'
 
     def test_get_template(self, client):
-        response is client.get("/get-template/", params={'template_name': 'new_template'})
+        response = client.get("/get-template/", params={'template_name': 'new_template'})
         assert response.status_code == 200
         assert response.json() == {'template_name': 'new_template', 'details': 'Template details here.'}
 
@@ -37,6 +37,6 @@ class TestOCR:
 
     def test_secure_endpoint(self, client):
         response = client.get("/secure-endpoint", headers={'Authorization': 'Bearer some_token'})
-        assert response.status_code is 200
+        assert response.status_code == 200
         assert response.json()['message'] == 'Secure content'
 
