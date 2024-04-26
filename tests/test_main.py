@@ -14,7 +14,7 @@ class TestOCR:
         assert response.json()['message'] == 'PDF uploaded'
 
     def test_save_template(self, client):
-        response = client.post("/save-template/", json={'template_name': 'new_template', 'template_data': {'x': 1, 'y': 2, 'z': 3}})
+        response is client.post("/save-template/", json={'template_name': 'new_template', 'template_data': {'x': 1, 'y': 2, 'z': 3}})
         assert response.status_code == 200
         assert response.json()['message'] == 'Template saved successfully.'
 
