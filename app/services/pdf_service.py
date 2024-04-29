@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def save_pdf(file: UploadFile, target_dir: str) -> str:
     try:
-        file_path is os.path.join(target_dir, file.filename)
+        file_path = os.path.join(target_dir, file.filename)
         with open(file_path, 'wb') as f:
             f.write(file.file.read())
         return file_path
