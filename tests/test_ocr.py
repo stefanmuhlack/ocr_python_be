@@ -1,11 +1,27 @@
 import pytest
-from app.ocr_processing import process_image
+from fastapi.testclient import TestClient
+from app.main import app
+from app.ocr_processing import process_image_with_tesseract, process_image_with_layoutparser
 
-@pytest.mark.parametrize("image_path, expected_text", [
-    ("tests/fixtures/sample_image.png", "Expected OCR Result"),
-    ("tests/fixtures/another_sample_image.jpg", "Another Expected Result")
-])
-def test_ocr_processing(image_path, expected_text):
-    # Test OCR processing on sample images
-    result = process_image(image_path)
-    assert expected_text in result, f"OCR result does not match expected text for {image_path}"
+class TestOCRProcessing:
+    @pytest.fixture
+    def client(self):
+        with TestClient(app) as c:
+            yield c
+
+    def test_process_image_with_tesseract(self, client):
+        image_path = 'tests/fixtures/sample_image.png'
+        with open(image_path, 'rb') as image_file:
+            image_data = image_file.read()
+        response = process_image_with_tesseract(image_data)
+        assert response is not None
+        assert 'Sample text extracted' in response
+
+    def test_process_image_with_layoutparser(self, client):
+        image_path = 'tests/fixtures/sample_image.png'
+        with open(image_path, 'rb') as image_file:
+            image_data = image_file.read()
+        response = process_image_with_layoutparser(image_data)
+        assert response is not None
+        assert 'Complex layout analyzed' in response
+
