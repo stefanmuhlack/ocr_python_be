@@ -35,8 +35,7 @@ def process_image_with_layoutparser(image):
         model = Detectron2LayoutModel(
             config_path='lp://PubLayNet/config',
             label_map={0: 'Text', 1: 'Title', 2: 'List', 3: 'Table', 4: 'Figure'},
-            extra_config=['MODEL.ROI_HEADS.SCORE_THRESH_TEST', 0.5, 'MODEL.DEVICE', 'cuda']
-        )
+            extra_config=['MODEL.ROI_HEADS.SCORE_THRESH_TEST', 0.5, 'MODEL.DEVICE', 'cuda'])
         # Detect layout
         layout = model.detect(preprocessed_image)
         # Extract text blocks
