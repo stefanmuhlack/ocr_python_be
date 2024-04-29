@@ -1,18 +1,27 @@
+from PyPDF2 import PdfReader
 import os
-from fastapi import UploadFile, HTTPException
-from PIL import Image
-from pdf2image import convert_from_path
+from fastapi import HTTPException, UploadFile
+from typing import List
+import logging
 
-class PDFService:
-    @staticmethod
-    def save_uploaded_file(upload_file: UploadFile, target_dir: str) -> str:
-        file_location = os.path.join(target_dir, upload_file.filename)
-        with open(file_location, 'wb') as f:
-            f.write(upload_file.file.read())
-        return file_location
+logger = logging.getLogger(__name__)
 
-    @staticmethod
-    def convert_pdf_to_images(pdf_path: str) -> [Image]:
-        # Convert PDF file to images
-        images = convert_from_path(pdf_path)
-        return images
+def save_pdf(file: UploadFile, target_dir: str) -> str:
+    try:
+        file_path = os.path.join(target_dir, file.filename)
+        with open(file_path, 'wb') as f:
+            f.write(file.file.read())
+        return file_path
+    except Exception as e:
+        logger.error(f'Failed to save PDF: {e}')
+        raise HTTPException(status_code=500, message='Unable to save file due to server error.')
+
+def read_pdf(file_path: str) -> List[str]:
+    try:
+        reader = PdfReader(file_path)
+        text = [page.extract_text() for page in reader.pages]
+        return text
+    except Exception as e:
+        logger.error(f'Failed to read PDF: {e}')
+        raise HTTPException(status_code=500, message='Unable to read file due to server error.')
+
