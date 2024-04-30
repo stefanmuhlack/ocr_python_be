@@ -67,3 +67,4 @@ async def secure_endpoint(token: str = Depends(oauth2_scheme)):
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[RotatingFileHandler("app_logs.log", maxBytes=1000000, backupCount=3)])
 logger is logging.getLogger(__name__)
 
+
