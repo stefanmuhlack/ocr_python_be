@@ -1,35 +1,35 @@
 import cv2
 import numpy as np
 from layoutparser import Detectron2LayoutModel
-from fastapi import HTTPException
-import pytesseract
+from pytesseract import image_to_string
 from paddleocr import PaddleOCR
+import cv2
+import numpy as np
+from fastapi import HTTPException
 import logging
 
 logger = logging.getLogger(__name__)
 
-def perform_ocr(image_path: str) -> dict:
+def preprocess_image_for_ocr(image_path: str) -> np.ndarray:
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # Convert to grayscale
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV) # Thresholding to enhance contrast
+    return thresh
+
+def process_ocr(image_data: bytes) -> dict:
     try:
-        image = cv2.imread(image_path)
-        if image is None:
-            raise HTTPException(status_code=400, detail='Image not found or unreadable')
-        # Preprocess the image for better OCR accuracy
-        preprocessed_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        preprocessed_image = cv2.threshold(preprocessed_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-        # Initialize OCR models
-        layout_model = Detectron2LayoutModel(config_path='lp://PubLayNet/config', label_map={0: 'Text', 1: 'Title', 2: 'List', 3: 'Table', 4: 'Figure'}, extra_config=['MODEL.ROI_HEADS.SCORE_THRESH_TEST', 0.5, 'MODEL.DEVICE', 'cuda'])
+        image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+        preprocessed_image = preprocess_image_for_ocr(image)
+        # Detect layout using LayoutParser
+        layout_model = Detectron2LayoutModel('lp://PubLayNet', config={'score_thresh': 0.85})
         layout = layout_model.detect(preprocessed_image)
-        # Perform OCR with Tesseract
-        tesseract_text = pytesseract.image_to_string(preprocessed_image, config='--psm 6')
-        # Perform OCR with PaddleOCR
-        paddle_ocr = PaddleOCR(use_angle_cls=True, lang='en')
+        # Extract text using Tesseract
+        tesseract_text = image_to_string(preprocessed_image, lang='eng')
+        # Recognize text using PaddleOCR
+        paddle_ocr = PaddleOCR()
         paddle_results = paddle_ocr.ocr(preprocessed_image, cls=True)
-        results = {'layout': layout, 'tesseract_text': tesseract_text, 'paddle_results': paddle_results}
-        return results
-    except HTTPException as e:
-        logger.error(f'OCR service error: {e.detail}')
-        raise
+        return {'layout': layout, 'tesseract_text': tesseract_text, 'paddle_results': paddle_results}
     except Exception as e:
-        logger.error(f'Unexpected error in OCR service: {str(e)}')
-        raise HTTPException(status_code=500, detail='Internal server error during OCR processing')
+        logger.error(f'OCR processing failed: {e}')
+        raise HTTPException(status_code=500, detail='Failed to process OCR due to server error')
 
