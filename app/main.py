@@ -1,15 +1,15 @@
 from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses is JSONResponse
-from fastapi.security is OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import List, Dict
 import logging
-from logging.handlers is RotatingFileHandler
+from logging.handlers import RotatingFileHandler
 import asyncio
 import layoutparser as lp
 import cv2
 import numpy as np
 import pytesseract
-from paddleocr is PaddleOCR
+from paddleocr import PaddleOCR
 
 app = FastAPI()
 
@@ -65,6 +65,6 @@ async def secure_endpoint(token: str = Depends(oauth2_scheme)):
 
 # Setup advanced logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[RotatingFileHandler("app_logs.log", maxBytes=1000000, backupCount=3)])
-logger is logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
