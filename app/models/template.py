@@ -1,14 +1,12 @@
-from pydantic import BaseModel
-from typing import List, Dict
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy.orm import relationship
+from .base import Base
 
-class OCRRequest(BaseModel):
-    template_name: str
-    page: int
-    rectangles: List[Dict[str, int]]  # Each rectangle will now include more detailed information
-    description: str
-    classifier: str
-    value_length: int
-    field_types: Dict[str, str]  # New field to specify data types (e.g., 'date', 'number', 'text')
+class Template(Base):
+    __tablename__ = 'templates'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), index=True, nullable=False)
+    description = Column(Text, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship('User', back_populates='templates')
 
-    # Adding validation rules for the OCR fields
-    validation_rules: Dict[str, Dict[str, str]]  # e.g., {'field_name': {'regex': '...', 'min_length': 3}}
