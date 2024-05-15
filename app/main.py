@@ -1,31 +1,14 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import List, Dict
-import logging
-from logging.handlers import RotatingFileHandler
-import asyncio
-import layoutparser as lp
-import cv2
-import numpy as np
-import pytesseract
-from paddleocr import PaddleOCR
+from fastapi import FastAPI, UploadFile, File
+from .services.ocr_service import OCRService
 
 app = FastAPI()
+ocr_service = OCRService()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-
-@app.post("/upload-pdf/")
-async def upload_pdf():
-    # Placeholder for actual file upload handling
-    return JSONResponse(status_code=200, content={"message": "PDF uploaded"})
-
-@app.post("/save-template/")
-async def save_template():
-    # Placeholder for actual template saving logic
-    return JSONResponse(status_code=200, content={"message": "Template saved successfully."})
-
-@app.get("/get-template/")
+@app.post("/process-ocr/")
+async def process_ocr(file: UploadFile = File(...)):
+    contents = await file.read()
+    results = ocr_service.process_image(contents)
+    return {"message": "OCR processed successfully!", "results": results}
 async def get_template(template_name: str):
     # Simulate retrieving a template
     return JSONResponse(status_code=200, content={"template_name": template_name, "details": "Template details here."})
