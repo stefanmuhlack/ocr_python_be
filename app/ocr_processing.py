@@ -45,14 +45,3 @@ def process_image_with_layoutparser(image):
         logger.error(f"Error processing image with LayoutParser: {e}")
         return None
 
-            label_map={0: 'Text', 1: 'Title', 2: 'List', 3: 'Table', 4: 'Figure'},
-            extra_config=['MODEL.ROI_HEADS.SCORE_THRESH_TEST', 0.5, 'MODEL.DEVICE', 'cuda'])
-        # Detect layout
-        layout = model.detect(preprocessed_image)
-        # Extract text blocks
-        text_blocks = [pytesseract.image_to_string(block.region_image(preprocessed_image), lang='eng') for block in layout]
-        return ' '.join(text_blocks)
-    except Exception as e:
-        logger.error(f"Error processing image with LayoutParser: {e}")
-        return None
-
