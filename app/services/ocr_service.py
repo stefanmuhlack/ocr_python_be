@@ -1,28 +1,19 @@
-import cv2
-import numpy as np
-from layoutparser import Detectron2LayoutModel
-from pytesseract import image_to_string
-from paddleocr import PaddleOCR
-import cv2
-import numpy as np
-from fastapi import HTTPException
-import logging
+from .ocr_processing import preprocess_for_ocr, process_image_with_tesseract, process_image_with_layoutparser, process_image_with_paddleocr
 
-logger = logging.getLogger(__name__)
+class OCRService:
+    def __init__(self):
+        pass
 
-def preprocess_image_for_ocr(image_path: str) -> np.ndarray:
-    image = cv2.imread(image_path)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # Convert to grayscale
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV) # Thresholding to enhance contrast
-    return thresh
-
-def process_ocr(image_data: bytes) -> dict:
-    try:
-        image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
-        preprocessed_image = preprocess_image_for_ocr(image)
-        # Detect layout using LayoutParser
-        layout_model = Detectron2LayoutModel('lp://PubLayNet', config={'score_thresh': 0.85})
-        layout = layout_model.detect(preprocessed_image)
+    def process_image(self, image_data, methods=['tesseract', 'layoutparser', 'paddleocr']):
+        preprocessed_image = preprocess_for_ocr(image_data)
+        results = {}
+        if 'tesseract' in methods:
+            results['tesseract'] = process_image_with_tesseract(preprocessed_image)
+        if 'layoutparser' in methods:
+            results['layoutparser'] = process_image_with_layoutparser(preprocessed_image)
+        if 'paddleocr' in methods:
+            results['paddleocr'] = process_image_with_paddleocr(preprocessed_image)
+        return results
         # Extract text using Tesseract
         tesseract_text = image_to_string(preprocessed_image, lang='eng')
         # Recognize text using PaddleOCR
