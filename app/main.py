@@ -1,3 +1,5 @@
+from ocr_service import OCRService
+
 from fastapi import FastAPI, UploadFile, File
 from .services.ocr_service import OCRService
 
