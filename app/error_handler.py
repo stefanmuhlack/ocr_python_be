@@ -1,6 +1,8 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CustomError(Exception):
     def __init__(self, name: str, description: str, code: int):
@@ -8,7 +10,8 @@ class CustomError(Exception):
         self.description = description
         self.code = code
 
-def api_error_handler(request: Request, exc: HTTPException):
+async def api_error_handler(request: Request, exc: HTTPException):
+    logger.error(f"API Error: {exc.detail}")
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -17,7 +20,8 @@ def api_error_handler(request: Request, exc: HTTPException):
         }
     )
 
-def custom_error_handler(request: Request, exc: CustomError):
+async def custom_error_handler(request: Request, exc: CustomError):
+    logger.error(f"Custom Error: {exc.name} - {exc.description}")
     return JSONResponse(
         status_code=exc.code,
         content={
