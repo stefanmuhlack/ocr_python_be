@@ -6,6 +6,13 @@ class OCRService:
         self.ocr_layoutparser = True
         self.ocr_paddleocr = PaddleOCR()
 
+        # Additional preprocessing steps
+        preprocessed_image = preprocess_for_ocr(image_data)
+        # Example: Convert image to grayscale
+        preprocessed_image = cv2.cvtColor(preprocessed_image, cv2.COLOR_BGR2GRAY)
+        # Example: Apply thresholding
+        _, preprocessed_image = cv2.threshold(preprocessed_image, 128, 255, cv2.THRESH_BINARY)
+
     def process_image(self, image_data, methods=['tesseract', 'layoutparser', 'paddleocr']):
         preprocessed_image = preprocess_for_ocr(image_data)
         results = {}
