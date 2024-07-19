@@ -26,8 +26,8 @@ def create_template(template: TemplateCreate, db: Session = Depends(get_db)):
         logger.error(f'Failed to create template: {e}')
         raise HTTPException(status_code=500, detail='Unable to create template due to server error')
 
-@router.put("/template/{template_id}")
-async def update_template(template_id: int, template_data: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+@router.put("/templates/{template_id}")
+def update_template(template_id: int, template: TemplateUpdate, db: Session = Depends(get_db)):
     try:
         template = db.query(Template).filter(Template.id == template_id).first()
         if not template:
