@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
     # Validation logic before the template creation
     if 'name' not in template_data or not template_data['name']:
         raise HTTPException(status_code=400, detail="Template name is required")
-@router.post("/template")
-async def create_template(template_data: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+@router.post("/templates/")
+def create_template(template: TemplateCreate, db: Session = Depends(get_db)):
     try:
         fields_data = template_data.pop('fields', [])
         new_template = Template(**template_data)
