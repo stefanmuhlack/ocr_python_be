@@ -8,12 +8,15 @@ from layoutparser import Detectron2LayoutModel
 logger = logging.getLogger(__name__)
 
 def resize_image(image, target_size=(1024, 1024)):
+    """Resize image to target size."""
     return cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
 
 def reorient_image(image):
+    """Reorient image to a standard orientation."""
     return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
 def preprocess_for_ocr(image):
+    """Preprocess image for OCR by resizing, reorienting, and applying filters."""
     image = resize_image(image)
     image = reorient_image(image)
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -22,10 +25,9 @@ def preprocess_for_ocr(image):
     return filtered_image
 
 def process_image_with_tesseract(image):
+    """Process image with Tesseract OCR."""
     try:
-        # Preprocess image for better OCR results
         preprocessed_image = preprocess_for_ocr(image)
-        # OCR using Tesseract
         text = pytesseract.image_to_string(preprocessed_image, lang='eng')
         return text
     except Exception as e:
@@ -33,19 +35,20 @@ def process_image_with_tesseract(image):
         return None
 
 def process_image_with_layoutparser(image):
+    """Process image with LayoutParser and Tesseract OCR."""
     try:
-        # Preprocess image
         preprocessed_image = preprocess_for_ocr(image)
-        # Initialize LayoutParser model
         model = Detectron2LayoutModel(
             config_path='lp://PubLayNet/config',
             label_map={0: 'Text', 1: 'Title', 2: 'List', 3: 'Table', 4: 'Figure'},
             extra_config=['MODEL.ROI_HEADS.SCORE_THRESH_TEST', 0.5, 'MODEL.DEVICE', 'cuda'])
-        # Detect layout
         layout = model.detect(preprocessed_image)
-        # Extract text blocks
         text_blocks = [pytesseract.image_to_string(block.region_image(preprocessed_image), lang='eng') for block in layout]
         return ' '.join(text_blocks)
+    except Exception as e:
+        logger.error(f"Error processing image with LayoutParser: {e}")
+        return None
+
     except Exception as e:
         logger.error(f"Error processing image with LayoutParser: {e}")
         return None
