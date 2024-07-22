@@ -45,8 +45,8 @@ def update_template(template_id: int, template: TemplateUpdate, db: Session = De
         logger.error(f'Failed to update template: {e}')
         raise HTTPException(status_code=500, detail='Unable to update template due to server error')
 
-@router.delete("/template/{template_id}")
-async def delete_template(template_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+@router.delete("/templates/{template_id}")
+def delete_template(template_id: int, db: Session = Depends(get_db)):
     try:
         template = db.query(Template).filter(Template.id == template_id).first()
         if not template:
