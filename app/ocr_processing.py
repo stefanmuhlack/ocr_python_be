@@ -17,27 +17,39 @@ def reorient_image(image):
 
 def preprocess_for_ocr(image):
     """Preprocess image for OCR by resizing, reorienting, and applying filters."""
-    image = resize_image(image)
-    image = reorient_image(image)
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    thresh_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-    filtered_image = cv2.bilateralFilter(thresh_image, 9, 75, 75)
-    return filtered_image
+    try {
+        image = resize_image(image)
+        image = reorient_image(image)
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        enhanced_image = cv2.equalizeHist(gray_image)
+        thresh_image = cv2.adaptiveThreshold(enhanced_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        filtered_image = cv2.bilateralFilter(thresh_image, 9, 75, 75)
+        logger.info("Image preprocessing completed.")
+        return filtered_image
+    } except (Exception as e) {
+        logger.error(f"Error in preprocessing for OCR: {e}")
+        return None
+    }
 
-def process_image_with_tesseract(image):
+ def process_image_with_tesseract(image):
     """Process image with Tesseract OCR."""
-    try:
+    try {
         preprocessed_image = preprocess_for_ocr(image)
+        if preprocessed_image is None:
+            raise ValueError("Preprocessing failed.")
         text = pytesseract.image_to_string(preprocessed_image, lang='eng')
         return text
-    except Exception as e:
+    } except (Exception as e) {
         logger.error(f"Error processing image with Tesseract: {e}")
         return None
+    }
 
-def process_image_with_layoutparser(image):
+ def process_image_with_layoutparser(image):
     """Process image with LayoutParser and Tesseract OCR."""
-    try:
+    try {
         preprocessed_image = preprocess_for_ocr(image)
+        if preprocessed_image is None:
+            raise ValueError("Preprocessing failed.")
         model = Detectron2LayoutModel(
             config_path='lp://PubLayNet/config',
             label_map={0: 'Text', 1: 'Title', 2: 'List', 3: 'Table', 4: 'Figure'},
@@ -45,14 +57,10 @@ def process_image_with_layoutparser(image):
         layout = model.detect(preprocessed_image)
         text_blocks = [pytesseract.image_to_string(block.region_image(preprocessed_image), lang='eng') for block in layout]
         return ' '.join(text_blocks)
-    except Exception as e:
+    } except (Exception as e) {
         logger.error(f"Error processing image with LayoutParser: {e}")
         return None
-
-    except Exception as e:
-        logger.error(f"Error processing image with LayoutParser: {e}")
-        return None
-
+    }
 
 logger = logging.getLogger(__name__)
 
